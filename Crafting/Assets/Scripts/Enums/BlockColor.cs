@@ -1,9 +1,9 @@
 ﻿using UnityEngine;
 
-public enum BlocColor
+public enum BlockColor
 {
-    Red,
-    Green, 
-    Yellow,
-    Blue
+    Red = 0,
+    Yellow = 1,
+    Green = 2, 
+    Blue = 3
 }

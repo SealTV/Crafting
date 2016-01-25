@@ -1,52 +1,39 @@
-﻿using UnityEngine;
-using UnityEngine.EventSystems;
-using UnityEngine.UI;
+﻿
+using UnityEngine;
 
-[RequireComponent(typeof(Image))]
-public class Cell : MonoBehaviour, IDropHandler
+public class Cell : BlockContainer
 {
-    private RectTransform rectTransform;
+    public bool IsEmpty = true;
 
-    private bool IsEmpty = true;
+    public Block BlockPrefub;
+    public Transform RootTransform;
 
-    // Use this for initialization
-    void Start()
+    private void Start()
     {
-        rectTransform = GetComponent<RectTransform>();
+        Block block = Instantiate(BlockPrefub);
+        block.Color = (BlockColor)block.Type;
+
+        block.transform.SetParent(RootTransform);
+        block.transform.position = new Vector3(transform.position.x, transform.position.y, -1);
+        IsEmpty = true;
+
+        this.OnDrop(block);
     }
 
-
-    // Update is called once per frame
-    void Update () {
-	
-	}
-
-    public void OnDrop(PointerEventData data)
+    public override void OnDrop(Block block)
     {
-
-        if(data.pointerDrag != null)
+        if(IsEmpty)
         {
-            var dropedObject = data.pointerDrag;
-            Block block = dropedObject.GetComponent<Block>();
-            if(!IsEmpty)
-            {
-                block.RetunToOldPosition();
-                return;
-            }
-
+            base.OnDrop(block);
             IsEmpty = false;
-            block.OnBeginDragAction += OnBeginDragBlock;
-
-
-            dropedObject.transform.SetParent(transform);
-            var rectTransformObj = dropedObject.GetComponent<RectTransform>();
-
-            rectTransformObj.SetParent(rectTransform);
-            rectTransformObj.position = rectTransform.position;
+        }
+        else
+        {
+            block.ReturnToOldPosition();
         }
     }
 
-    private void OnBeginDragBlock(Block block)
+    protected override void OnBeginDragBlock(Block block)
     {
         block.OnBeginDragAction -= OnBeginDragBlock;
         IsEmpty = true;

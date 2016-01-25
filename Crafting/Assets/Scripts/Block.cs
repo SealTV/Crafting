@@ -1,57 +1,121 @@
 ﻿using UnityEngine;
-using System.Collections;
-using UnityEngine.EventSystems;
 using System;
-using UnityEngine.UI;
 
-[RequireComponent(typeof(Image))]
-public class Block : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
+public class Block : MonoBehaviour
 {
-    public BlocColor Color;
-
-    public RectTransform RootTransform;
+    public Sprite[] Sprites;
+    private BlockColor color;
+    public BlockColor Color
+    {
+        get
+        {
+            return color;
+        }
+        set
+        {
+            color = value;
+            var spriteRenderer = GetComponent<SpriteRenderer>();
+            spriteRenderer.sprite = Sprites[(int)value];
+        }
+    }
+    public BlockType Type;
+    public int I;
+    public int J;
+    public float Speed = 5;
     [HideInInspector]
-    public RectTransform rectTransform;
-
+    public BlockContainer ParenContainer;
     public Action<Block> OnBeginDragAction;
 
-    private Transform oldParent;
+
     private Vector3 oldPosition;
+    private BlockContainer oldParentContainer;
+
+    private bool isSelected;
+    private bool isMove;
+    private Vector3 target;
+
+    private float LeftCellPositionX;
+    private float LeftCellPositionY;
 
     // Use this for initialization
     void Start()
     {
-        rectTransform = GetComponent<RectTransform>();
+        SpriteRenderer spriteRender = GetComponent<SpriteRenderer>();
+        Sprite sprite = spriteRender.sprite;
+        var CellSizeX = sprite.rect.width * transform.localScale.x / (sprite.pixelsPerUnit * Type.GetWidth());
+        var CellSizeY = sprite.rect.height * transform.localScale.y / (sprite.pixelsPerUnit * Type.GetHeight());
+
+        LeftCellPositionX = Type.GetWidth() == 1 ? 0 : CellSizeX / Type.GetWidth();
+        LeftCellPositionY = Type.GetHeight() == 1? 0 : CellSizeY / Type.GetHeight();
     }
 
-
-    public void OnBeginDrag(PointerEventData eventData)
+    void Update()
     {
-        // this.rectTransform.SetParent(RootTransform);
-        oldParent = this.transform.parent;
-        oldPosition = this.transform.position;
-        if(OnBeginDragAction != null)
+        if(isMove && !isSelected)
         {
-            OnBeginDragAction(this);
+            transform.position = Vector3.MoveTowards(transform.position, target, Speed * Time.deltaTime);
+            if(transform.position == target)
+                isMove = false;
         }
     }
 
-    public void OnDrag(PointerEventData eventData)
+    public void SetToPosition(Vector3 target, bool isGrid = false)
     {
-        this.transform.position = Input.mousePosition;
+        if(ParenContainer is Grid)
+        {
+            target.x += LeftCellPositionX;
+            target.y -= LeftCellPositionY;
+        }
+        this.target = target;
+        isMove = true;
     }
 
-    public void OnEndDrag(PointerEventData eventData)
+    internal void ReturnToOldPosition()
     {
-
+        oldParentContainer.OnDrop(this, oldPosition);
     }
 
-    public void RetunToOldPosition()
+
+    public void OnMouseUp()
     {
-        this.transform.SetParent(oldParent);
-        this.transform.position = oldPosition;
+        isSelected = false;
+
+        var ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+        var hits = Physics.RaycastAll(ray);
+        if(hits.Length == 0)
+        {
+            this.ReturnToOldPosition();
+            return;
+        }
+
+        foreach(var hit in hits)
+        {
+            var objectHit = hit.collider.gameObject;
+
+            BlockContainer container = objectHit.GetComponent<BlockContainer>();
+            container.OnDrop(this);
+        }
     }
 
+    public void OnMouseDrag()
+    {
+        if(!isSelected)
+            return;
+
+        var position = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+        position.z = -1;
+        transform.position = position;
+    }
+
+    public void OnMouseDown()
+    {
+        isSelected = true;
+        if(OnBeginDragAction != null)
+            OnBeginDragAction(this);
+
+        oldPosition = transform.position;
+        oldParentContainer = ParenContainer;
+    }
 }
 
 
