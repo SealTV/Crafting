@@ -1,27 +1,21 @@
 ﻿using UnityEngine;
+using System.Linq;
 
 public class CraftCell : BlockContainer
 {
     public Transform RootTransform;
-
     public Cell[] Cells;
     public Block[] BlocksPrefub;
 
-    public bool IsEmpty = true;
-
     private Block generatedBlock;
-    public void GenerateBlock()
+
+    public void GenerateNewBlock()
     {
-        foreach(Cell cell in Cells)
-        {
-            if(cell.IsEmpty)
-                return;
-        }
-        if(!IsEmpty)
-        {
+        if(Cells.Any(cell => cell.IsEmpty))
+            return;
+        
+        if(generatedBlock != null)
             Destroy(generatedBlock.gameObject);
-            IsEmpty = true;
-        }
 
         System.Random random = new System.Random();
         int blockId = random.Next(0, 4);
@@ -32,22 +26,25 @@ public class CraftCell : BlockContainer
 
         block.transform.SetParent(RootTransform);
         block.transform.position = new Vector3(transform.position.x, transform.position.y, -1);
-        IsEmpty = false;
 
-        OnDrop(block);
+        this.OnDrop(block);
     }
 
     public override void OnDrop(Block block)
     {
         base.OnDrop(block);
         generatedBlock = block;
-        IsEmpty = false;
+    }
+
+    public override void OnDrop(Block block, Vector3 position)
+    {
+        base.OnDrop(block, position);
+        generatedBlock = block;
     }
 
     protected override void OnBeginDragBlock(Block block)
     {
         block.OnBeginDragAction -= OnBeginDragBlock;
-        IsEmpty = true;
         generatedBlock = null;
     }
 }

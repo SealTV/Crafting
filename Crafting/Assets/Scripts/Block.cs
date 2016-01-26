@@ -4,6 +4,7 @@ using System;
 public class Block : MonoBehaviour
 {
     public Sprite[] Sprites;
+
     private BlockColor color;
     public BlockColor Color
     {
@@ -18,14 +19,16 @@ public class Block : MonoBehaviour
             spriteRenderer.sprite = Sprites[(int)value];
         }
     }
+
     public BlockType Type;
-    public int I;
-    public int J;
+
+    public int X;
+    public int Y;
     public float Speed = 5;
+
     [HideInInspector]
     public BlockContainer ParenContainer;
     public Action<Block> OnBeginDragAction;
-
 
     private Vector3 oldPosition;
     private BlockContainer oldParentContainer;
@@ -34,19 +37,17 @@ public class Block : MonoBehaviour
     private bool isMove;
     private Vector3 target;
 
-    private float LeftCellPositionX;
-    private float LeftCellPositionY;
+    private float LeftUpX;
+    private float LeftUpY;
 
-    // Use this for initialization
     void Start()
     {
-        SpriteRenderer spriteRender = GetComponent<SpriteRenderer>();
-        Sprite sprite = spriteRender.sprite;
-        var CellSizeX = sprite.rect.width * transform.localScale.x / (sprite.pixelsPerUnit * Type.GetWidth());
-        var CellSizeY = sprite.rect.height * transform.localScale.y / (sprite.pixelsPerUnit * Type.GetHeight());
+        Sprite sprite = GetComponent<SpriteRenderer>().sprite;
+        var cellWidth = sprite.rect.width * transform.localScale.x / (sprite.pixelsPerUnit * Type.GetWidth());
+        var cellHeight = sprite.rect.height * transform.localScale.y / (sprite.pixelsPerUnit * Type.GetHeight());
 
-        LeftCellPositionX = Type.GetWidth() == 1 ? 0 : CellSizeX / Type.GetWidth();
-        LeftCellPositionY = Type.GetHeight() == 1? 0 : CellSizeY / Type.GetHeight();
+        LeftUpX = Type.GetWidth() == 1 ? 0 : cellWidth / Type.GetWidth();
+        LeftUpY = Type.GetHeight() == 1? 0 : cellHeight / Type.GetHeight();
     }
 
     void Update()
@@ -59,22 +60,22 @@ public class Block : MonoBehaviour
         }
     }
 
-    public void SetToPosition(Vector3 target, bool isGrid = false)
+    public void SetToPosition(Vector3 target)
     {
+        this.target = target;
         if(ParenContainer is Grid)
         {
-            target.x += LeftCellPositionX;
-            target.y -= LeftCellPositionY;
+            this.target.x += LeftUpX;
+            this.target.y -= LeftUpY;
         }
-        this.target = target;
+
         isMove = true;
     }
 
-    internal void ReturnToOldPosition()
+    public void ReturnToOldPosition()
     {
         oldParentContainer.OnDrop(this, oldPosition);
     }
-
 
     public void OnMouseUp()
     {

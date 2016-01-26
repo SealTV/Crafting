@@ -15,16 +15,21 @@ public class Cell : BlockContainer
 
         block.transform.SetParent(RootTransform);
         block.transform.position = new Vector3(transform.position.x, transform.position.y, -1);
-        IsEmpty = true;
 
         this.OnDrop(block);
     }
 
     public override void OnDrop(Block block)
     {
+        this.OnDrop(block, new Vector3(transform.position.x, transform.position.y, -1));
+    }
+
+    public override void OnDrop(Block block, Vector3 position)
+    {
+        base.OnDrop(block, position);
         if(IsEmpty)
         {
-            base.OnDrop(block);
+            base.OnDrop(block, position);
             IsEmpty = false;
         }
         else
